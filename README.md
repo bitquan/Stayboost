@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # StayBoost - Exit-Intent Popup Shopify App
 
 **StayBoost** is a Shopify app that captures abandoning customers with smart exit-intent popups and converts them with targeted discount offers.
