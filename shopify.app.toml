@@ -1,0 +1,32 @@
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
+
+client_id = "8279a1a1278f468713b7aaf5fad1f7dc"
+name = "StayBoost"
+handle = "stayboost"
+application_url = "https://lighting-burns-lines-smoking.trycloudflare.com"
+embedded = true
+
+[build]
+include_config_on_deploy = true
+automatically_update_urls_on_dev = true
+
+[webhooks]
+api_version = "2025-07"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/uninstalled" ]
+  uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = [ "app/scopes_update" ]
+  uri = "/webhooks/app/scopes_update"
+
+[access_scopes]
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "write_products"
+
+[auth]
+redirect_urls = ["https://lighting-burns-lines-smoking.trycloudflare.com/auth/callback", "https://lighting-burns-lines-smoking.trycloudflare.com/auth/shopify/callback", "https://lighting-burns-lines-smoking.trycloudflare.com/api/auth/callback"]
+
+[pos]
+embedded = false

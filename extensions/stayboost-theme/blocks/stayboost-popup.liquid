@@ -1,0 +1,27 @@
+{%- comment -%}
+StayBoost app embed: loads the popup script on all theme pages.
+Merchant should paste the App Settings API URL from the StayBoost admin.
+{%- endcomment -%}
+
+<script
+  src="{{ 'stayboost-popup.js' | asset_url }}"
+  defer
+  data-stayboost-api-url="{{ block.settings.api_url }}"
+  data-shop-domain="{{ shop.permanent_domain }}"
+></script>
+
+{% schema %}
+{
+  "name": "StayBoost Popup",
+  "target": "body",
+  "settings": [
+    {
+      "type": "text",
+      "id": "api_url",
+      "label": "App Settings API URL",
+      "info": "Paste the API URL from the StayBoost app (e.g., https://your-app-domain.com/api/stayboost/settings?shop=your-store.myshopify.com)",
+      "default": ""
+    }
+  ]
+}
+{% endschema %}
