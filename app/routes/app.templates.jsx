@@ -2,10 +2,12 @@ import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { Badge, BlockStack, Box, Button, Card, InlineGrid, InlineStack, Layout, Page, Select, Text } from "@shopify/polaris";
 import { useCallback, useEffect, useState } from "react";
+import { AdvancedTemplatePreview } from "../components/AdvancedTemplatePreview";
 import { CustomTemplateModal } from "../components/CustomTemplateModal";
 import { TemplateImportExportModal } from "../components/TemplateImportExportModal";
 import { TemplatePreview } from "../components/TemplatePreview";
 import prisma from "../db.server";
+import { getCachedMerchantBranding } from "../models/merchantBranding.server";
 import { authenticate } from "../shopify.server";
 
 // Loader function to fetch templates server-side
@@ -29,8 +31,14 @@ export async function loader({ request }) {
       },
       orderBy: { createdAt: "desc" }
     });
+
+    // Get merchant branding for advanced preview
+    const brandingResult = await getCachedMerchantBranding(request);
     
-    return json({ templates });
+    return json({ 
+      templates, 
+      shopBranding: brandingResult?.branding || null 
+    });
   } catch (error) {
     console.error('Error loading templates:', error);
     return json({ templates: [] });
@@ -46,7 +54,7 @@ const TEMPLATE_CATEGORIES = {
 };
 
 export default function Templates() {
-  const { templates: loaderTemplates } = useLoaderData();
+  const { templates: loaderTemplates, shopBranding } = useLoaderData();
   const [templates, setTemplates] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedTemplate, setSelectedTemplate] = useState(null);
@@ -64,6 +72,10 @@ export default function Templates() {
   const [showImportModal, setShowImportModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportableTemplates, setExportableTemplates] = useState([]);
+
+  // Advanced preview state
+  const [showAdvancedPreview, setShowAdvancedPreview] = useState(false);
+  const [advancedPreviewTemplate, setAdvancedPreviewTemplate] = useState(null);
 
   // Transform database templates to match frontend format
   useEffect(() => {
@@ -265,6 +277,11 @@ export default function Templates() {
     window.location.reload();
   };
 
+  const handleAdvancedPreview = (template) => {
+    setAdvancedPreviewTemplate(template);
+    setShowAdvancedPreview(true);
+  };
+
   return (
     <Page
       title="Template Library"
@@ -363,7 +380,16 @@ export default function Templates() {
                       borderRadius="200"
                     >
                       <BlockStack gap="200">
-                        <Text variant="headingSm">Preview</Text>
+                        <InlineStack align="space-between">
+                          <Text variant="headingSm">Preview</Text>
+                          <Button
+                            variant="tertiary"
+                            size="micro"
+                            onClick={() => handleAdvancedPreview(template)}
+                          >
+                            Advanced Preview
+                          </Button>
+                        </InlineStack>
                         <div style={{
                           padding: '20px',
                           backgroundColor: template.preview.backgroundColor,
@@ -519,6 +545,56 @@ export default function Templates() {
           onClose={() => setShowExportModal(false)}
           onComplete={handleImportExportComplete}
         />
+      )}
+
+      {/* Advanced Template Preview Modal */}
+      {showAdvancedPreview && advancedPreviewTemplate && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.8)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px'
+        }}>
+          <div style={{
+            backgroundColor: 'white',
+            borderRadius: '12px',
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            position: 'relative'
+          }}>
+            <AdvancedTemplatePreview
+              config={advancedPreviewTemplate}
+              title={`Advanced Preview: ${advancedPreviewTemplate.name}`}
+              shopBranding={shopBranding}
+              showControls={true}
+              realTimeMode={false}
+            />
+            <Box padding="400">
+              <InlineStack gap="300" align="end">
+                <Button onClick={() => setShowAdvancedPreview(false)}>
+                  Close
+                </Button>
+                <Button 
+                  variant="primary" 
+                  onClick={() => {
+                    setShowAdvancedPreview(false);
+                    handleApplyTemplate(advancedPreviewTemplate);
+                  }}
+                >
+                  Apply Template
+                </Button>
+              </InlineStack>
+            </Box>
+          </div>
+        </div>
       )}
     </Page>
   );
