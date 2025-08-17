@@ -1,12 +1,13 @@
 import { json } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
-import { Badge, BlockStack, Box, Button, Card, InlineGrid, InlineStack, Layout, Page, Select, Text } from "@shopify/polaris";
+import { Badge, BlockStack, Box, Button, Card, InlineGrid, InlineStack, Layout, Page, Text } from "@shopify/polaris";
 import { useCallback, useEffect, useState } from "react";
 import { AdvancedTemplatePreview } from "../components/AdvancedTemplatePreview";
 import { CustomTemplateModal } from "../components/CustomTemplateModal";
 import { TemplateFavoriteButton } from "../components/TemplateFavoriteButton";
 import { TemplateImportExportModal } from "../components/TemplateImportExportModal";
 import { TemplatePreview } from "../components/TemplatePreview";
+import { TemplateSearchFilters } from "../components/TemplateSearchFilters";
 import prisma from "../db.server";
 import { getCachedMerchantBranding } from "../models/merchantBranding.server";
 import { authenticate } from "../shopify.server";
@@ -77,6 +78,14 @@ export default function Templates() {
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [isApplying, setIsApplying] = useState(false);
   
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [templateType, setTemplateType] = useState("all");
+  const [sortBy, setSortBy] = useState("name");
+  const [sortOrder, setSortOrder] = useState("asc");
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchSuggestions, setSearchSuggestions] = useState([]);
+  
   // Favorites state
   const [favorites, setFavorites] = useState([]);
   const [favoritedTemplateIds, setFavoritedTemplateIds] = useState(new Set());
@@ -99,7 +108,87 @@ export default function Templates() {
   const [showAdvancedPreview, setShowAdvancedPreview] = useState(false);
   const [advancedPreviewTemplate, setAdvancedPreviewTemplate] = useState(null);
 
-  // Transform database templates to match frontend format
+  // Search and filter templates
+  const searchAndFilterTemplates = useCallback(async () => {
+    setSearchLoading(true);
+    try {
+      const params = new URLSearchParams({
+        q: searchQuery,
+        category: selectedCategory === "favorites" ? "all" : selectedCategory,
+        type: templateType,
+        sort: sortBy,
+        order: sortOrder
+      });
+
+      const response = await fetch(`/api/template-search?${params}`);
+      if (response.ok) {
+        const data = await response.json();
+        
+        // If favorites category is selected, filter locally
+        let filteredTemplates = data.templates;
+        if (selectedCategory === "favorites") {
+          filteredTemplates = data.templates.filter(template => 
+            favoritedTemplateIds.has(template.id)
+          );
+        }
+        
+        // Transform templates to match frontend format
+        const transformedTemplates = filteredTemplates.map(template => {
+          try {
+            const config = JSON.parse(template.config || '{}');
+            return {
+              id: template.id,
+              name: template.name,
+              category: template.category,
+              templateType: template.templateType || "built_in",
+              conversionRate: template.conversionRate || 0,
+              title: config.title || template.name,
+              message: config.message || "",
+              discountCode: config.discountCode || "",
+              discountPercentage: config.discountPercentage || 0,
+              preview: {
+                backgroundColor: config.backgroundColor || "#ffffff",
+                textColor: config.textColor || "#333333",
+                buttonColor: config.buttonColor || "#5c6ac4"
+              }
+            };
+          } catch (parseError) {
+            console.error('Error parsing template config:', parseError);
+            return {
+              id: template.id,
+              name: template.name,
+              category: template.category,
+              templateType: template.templateType || "built_in",
+              conversionRate: 0,
+              title: template.name,
+              message: "Template configuration error",
+              discountCode: "ERROR",
+              discountPercentage: 0,
+              preview: {
+                backgroundColor: "#ffffff",
+                textColor: "#333333",
+                buttonColor: "#5c6ac4"
+              }
+            };
+          }
+        });
+        
+        setTemplates(transformedTemplates);
+        setSearchSuggestions(data.suggestions || []);
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [searchQuery, selectedCategory, templateType, sortBy, sortOrder, favoritedTemplateIds]);
+
+  // Search effect
+  useEffect(() => {
+    searchAndFilterTemplates();
+  }, [searchAndFilterTemplates]);
+
+  // Initial load without search to get all templates
   useEffect(() => {
     const transformedTemplates = loaderTemplates.map(template => {
       try {
@@ -141,8 +230,11 @@ export default function Templates() {
       }
     });
     
-    setTemplates(transformedTemplates);
-  }, [loaderTemplates]);
+    // Only set initial templates if no search parameters are active
+    if (!searchQuery && selectedCategory === "all" && templateType === "all" && sortBy === "name") {
+      setTemplates(transformedTemplates);
+    }
+  }, [loaderTemplates, searchQuery, selectedCategory, templateType, sortBy]);
 
   // Load favorites when component mounts
   useEffect(() => {
@@ -178,15 +270,36 @@ export default function Templates() {
     }
   }, []);
 
-  const filteredTemplates = templates.filter(template => {
-    if (selectedCategory === "all") {
-      return true;
-    } else if (selectedCategory === "favorites") {
-      return favoritedTemplateIds.has(template.id);
-    } else {
-      return template.category === selectedCategory;
-    }
-  });
+  // Search handlers
+  const handleSearchChange = useCallback((query) => {
+    setSearchQuery(query);
+  }, []);
+
+  const handleCategoryChange = useCallback((category) => {
+    setSelectedCategory(category);
+  }, []);
+
+  const handleTemplateTypeChange = useCallback((type) => {
+    setTemplateType(type);
+  }, []);
+
+  const handleSortByChange = useCallback((sort) => {
+    setSortBy(sort);
+  }, []);
+
+  const handleSortOrderChange = useCallback((order) => {
+    setSortOrder(order);
+  }, []);
+
+  const handleClearFilters = useCallback(() => {
+    setSearchQuery("");
+    setSelectedCategory("all");
+    setTemplateType("all");
+    setSortBy("name");
+    setSortOrder("asc");
+  }, []);
+
+  const filteredTemplates = templates;
 
   const applyTemplate = useCallback(async (template) => {
     setIsApplying(true);
@@ -363,24 +476,28 @@ export default function Templates() {
       ]}
     >
       <Layout>
-        <Layout.Section variant="oneThird">
+        <Layout.Section>
           <Card>
-            <BlockStack gap="400">
-              <Text variant="headingMd">Filter Templates</Text>
-              <Select
-                label="Category"
-                options={Object.entries(TEMPLATE_CATEGORIES).map(([value, label]) => ({
-                  label,
-                  value,
-                }))}
-                value={selectedCategory}
-                onChange={setSelectedCategory}
-              />
-            </BlockStack>
+            <TemplateSearchFilters
+              searchQuery={searchQuery}
+              onSearchChange={handleSearchChange}
+              category={selectedCategory}
+              onCategoryChange={handleCategoryChange}
+              templateType={templateType}
+              onTemplateTypeChange={handleTemplateTypeChange}
+              sortBy={sortBy}
+              onSortByChange={handleSortByChange}
+              sortOrder={sortOrder}
+              onSortOrderChange={handleSortOrderChange}
+              onClearFilters={handleClearFilters}
+              totalResults={filteredTemplates.length}
+              loading={searchLoading}
+              suggestions={searchSuggestions}
+            />
           </Card>
         </Layout.Section>
 
-        <Layout.Section variant="twoThirds">
+        <Layout.Section>
           <BlockStack gap="400">
             {filteredTemplates.length === 0 ? (
               <Card>

@@ -340,9 +340,10 @@ model PopupTemplate {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
 
-  usageStats TemplateUsageStats[]
-  ratings    TemplateRating[]
-  favorites  TemplateFavorites[]
+  usageStats   TemplateUsageStats[]
+  ratings      TemplateRating[]
+  favorites    TemplateFavorites[]
+  translations TemplateTranslation[]
 
   @@index([shop])
   @@index([category])
@@ -441,4 +442,23 @@ model TemplateFavorites {
   @@index([shop])
   @@index([templateId])
   @@index([createdAt])
+}
+
+// Template Translation Model - Multi-language support for templates
+model TemplateTranslation {
+  id         Int      @id @default(autoincrement())
+  templateId Int // Reference to the PopupTemplate
+  language   String // Language code (en, es, fr, de, etc.)
+  key        String // Translation key (title, message, buttonText, etc.)
+  value      String // Translated value
+  shop       String // The shop that created this translation
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  template PopupTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, language, key]) // Prevent duplicate translations for same template/language/key
+  @@index([templateId])
+  @@index([language])
+  @@index([shop])
 }
