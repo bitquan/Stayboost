@@ -1,6 +1,28 @@
 {%- comment -%}
 StayBoost app embed: loads the popup script on all theme pages.
 Merchant should paste the App Settings API URL from the StayBoost admin.
+
+TODO: Testing and Integration Needed
+- [ ] Add comprehensive Liquid template rendering tests with various settings
+- [ ] Test theme customizer integration and validation across different themes
+- [ ] Create tests for asset URL generation and CDN compatibility
+- [ ] Test shop domain parameter handling and validation
+- [ ] Add validation for API URL format and security
+- [ ] Test error handling for missing or invalid settings
+- [ ] Integration tests with different theme structures (2.0, vintage, custom)
+- [ ] Test performance impact on page load and Core Web Vitals
+- [ ] Validate schema configuration accuracy and completeness
+- [ ] Test backward compatibility with older themes and Liquid versions
+- [ ] Add tests for A/B variant loading and display
+- [ ] Test multi-language support integration
+- [ ] Validate popup script loading in different network conditions
+- [ ] Test AJAX loading and single-page application compatibility
+- [ ] Add monitoring for template rendering errors
+- [ ] Test integration with Shopify's Online Store 2.0 features
+- [ ] Validate template security and XSS prevention
+- [ ] Test template caching and invalidation
+- [ ] Add tests for custom CSS and JavaScript injection
+- [ ] Validate merchant configuration workflow
 {%- endcomment -%}
 
 <script
@@ -20,7 +42,7 @@ Merchant should paste the App Settings API URL from the StayBoost admin.
       "id": "api_url",
       "label": "App Settings API URL",
       "info": "Paste the API URL from the StayBoost app (e.g., https://your-app-domain.com/api/stayboost/settings?shop=your-store.myshopify.com)",
-      "default": ""
+      "default": "https://your-app-domain.com/api/stayboost/settings"
     }
   ]
 }

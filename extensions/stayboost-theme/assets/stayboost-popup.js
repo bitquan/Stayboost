@@ -1,3 +1,30 @@
+/**
+ * StayBoost Theme Extension - Client-side Popup Implementation
+ * Handles exit-intent detection and popup display on storefront
+ * 
+ * TODO: Testing and Integration Needed
+ * - [ ] Add comprehensive unit tests for exit-intent detection algorithms
+ * - [ ] Test mobile back button detection and browser compatibility
+ * - [ ] Create cross-browser compatibility tests (Chrome, Firefox, Safari, Edge)
+ * - [ ] Test popup positioning and responsiveness across devices
+ * - [ ] Add performance tests for script loading and initialization
+ * - [ ] Test session storage functionality and persistence
+ * - [ ] Validate API integration error handling and fallbacks
+ * - [ ] Add accessibility tests (WCAG 2.1 AA compliance)
+ * - [ ] Test popup animations and transitions performance
+ * - [ ] Integration with theme customizer settings and validation
+ * - [ ] Test A/B variant assignment and display
+ * - [ ] Validate multi-language popup display
+ * - [ ] Test frequency control integration
+ * - [ ] Add popup analytics tracking validation
+ * - [ ] Test edge cases (slow networks, API failures)
+ * - [ ] Validate popup styling across different themes
+ * - [ ] Test popup interaction tracking accuracy
+ * - [ ] Add error logging and monitoring integration
+ * - [ ] Test popup display on various screen sizes
+ * - [ ] Validate exit-intent sensitivity settings
+ */
+
 (function () {
   function getDataAttr(name) {
     var el =
@@ -67,9 +94,48 @@
         shown = true;
         container.style.display = "flex";
         if (showOnce) sessionStorage.setItem("stayboost_shown", "1");
+        
+        // Record impression
+        recordAnalytics('impression');
       }
       function hide() {
         container.style.display = "none";
+        // Track dismiss event
+        trackPerformance('dismiss', s.templateId || 0);
+      }
+
+      // Performance tracking function
+      function trackPerformance(event, templateId) {
+        try {
+          // Generate a session ID for tracking
+          var sessionId = sessionStorage.getItem('stayboost-session') || 
+                         'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+          sessionStorage.setItem('stayboost-session', sessionId);
+          
+          var trackingUrl = apiUrl.replace('/api/stayboost/settings', '/api/track-performance');
+          fetch(trackingUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ 
+              event: event,
+              templateId: templateId,
+              sessionId: sessionId,
+              conversionValue: 0 // Can be updated for revenue tracking
+            }),
+            credentials: 'omit'
+          }).catch(function() {
+            // Silently fail tracking to not interrupt user experience
+          });
+        } catch (e) {
+          // Silently fail tracking to not interrupt user experience
+        }
+      }
+
+      // Legacy analytics recording function for backwards compatibility
+      function recordAnalytics(type) {
+        trackPerformance(type, s.templateId || 0);
       }
 
       container.addEventListener("click", function (e) {
@@ -81,6 +147,8 @@
       document
         .getElementById("stayboost-cta")
         .addEventListener("click", function () {
+          // Record conversion before hiding
+          recordAnalytics('conversion');
           hide();
         });
 

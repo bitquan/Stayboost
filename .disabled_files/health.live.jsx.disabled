@@ -1,0 +1,23 @@
+import { json } from "@remix-run/node";
+import { livenessCheck } from "~/utils/health.server";
+
+// Liveness check endpoint - GET /health/live
+export async function loader() {
+  try {
+    const livenessStatus = await livenessCheck();
+    
+    return json(livenessStatus, {
+      status: livenessStatus.status === 'alive' ? 200 : 503,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch (error) {
+    return json({
+      status: "dead",
+      error: error.message,
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
+  }
+}

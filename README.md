@@ -8,10 +8,21 @@
 ### MVP (Current)
 
 - ✅ **Exit-Intent Detection**: Triggers when users try to leave the site
+- ✅ **Mobile Support**: Back button detection and scroll-based triggers
 - ✅ **Customizable Popups**: Edit title, message, and discount offers
+- ✅ **Template Library**: 22 professional pre-designed templates across 4 categories
 - ✅ **Live Preview**: See how your popup looks before publishing
 - ✅ **Basic Analytics**: Track impressions, conversions, and conversion rates
 - ✅ **One-Time Display**: Option to show popup only once per visitor
+- ✅ **Theme Integration**: Easy-to-install Liquid block for Shopify themes
+- ✅ **CORS-Enabled API**: Secure cross-origin popup configuration delivery
+
+### Template Categories (22 Templates)
+
+- **Exit Intent (5 templates)**: Classic exit intent, first-time visitor, cart abandonment, loyalty rewards, referral bonuses
+- **Sales & Promotions (7 templates)**: Flash sales, last chance offers, VIP access, student discounts, weekend deals, midnight sales, free shipping
+- **Holiday & Seasonal (6 templates)**: Christmas specials, birthday offers, summer collections, Black Friday previews, spring cleaning sales
+- **Newsletter Signup (4 templates)**: Email capture, back-in-stock notifications, review incentives, new arrival alerts, premium memberships
 
 ### Planned Features
 
@@ -19,8 +30,6 @@
 - 📊 **Advanced Analytics**: Detailed performance metrics and reports
 - 🎯 **Smart Targeting**: Show different popups based on user behavior
 - 📧 **Email Integration**: Capture emails for abandoned cart recovery
-- 📱 **Mobile Gestures**: Detect mobile exit intent (scroll up, back button)
-- 🎨 **Template Library**: Pre-designed popup templates
 - ⚡ **Real-time Visitor Count**: Show "X people viewing this" messages
 
 ## 💰 Monetization Strategy
@@ -41,9 +50,41 @@
 
 - **Framework**: Remix (React-based)
 - **Backend**: Node.js with Shopify App APIs
-- **Database**: Prisma ORM (SQLite for development)
+- **Database**: Prisma ORM (SQLite for development, PostgreSQL for production)
 - **UI Library**: Shopify Polaris
+- **Theme Integration**: Liquid blocks + Vanilla JavaScript
+- **Testing**: Node.js Test Runner + Playwright
 - **Deployment**: Shopify Partners Dashboard
+
+## 🏗️ Project Architecture
+
+### Core Components
+
+#### Admin Interface (`app/routes/`)
+- **`app._index.jsx`**: Main dashboard with settings, preview, and analytics
+- **`app.templates.jsx`**: Template library with 22 professional designs
+- **`app.jsx`**: App wrapper with Polaris styling and navigation
+
+#### API Layer (`app/routes/api/`)
+- **`api.stayboost.settings.jsx`**: Public CORS-enabled endpoint for popup settings
+- **`api.templates.jsx`**: Template management API for CRUD operations
+
+#### Database Layer (`app/models/` & `prisma/`)
+- **`popupSettings.server.js`**: Data layer for popup configuration
+- **`schema.prisma`**: Database schema with PopupSettings and PopupTemplate models
+- **`seed-templates.js`**: Template seeder with 22 default professional templates
+
+#### Theme Extension (`extensions/stayboost-theme/`)
+- **`blocks/stayboost-popup.liquid`**: Liquid block for theme integration
+- **`assets/stayboost-popup.js`**: Client-side popup implementation with exit-intent detection
+
+### Data Flow
+
+1. **Admin Configuration**: Merchant configures popup settings in dashboard
+2. **Database Storage**: Settings saved via Prisma to SQLite/PostgreSQL
+3. **API Exposure**: Settings exposed through CORS-enabled public API
+4. **Theme Integration**: Merchant adds Liquid block to theme
+5. **Storefront Display**: JavaScript fetches settings and displays exit-intent popup
 
 ## 🚀 Getting Started
 

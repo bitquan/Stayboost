@@ -1,0 +1,29 @@
+import { json } from "@remix-run/node";
+import { connectionPoolHealthCheck, getDatabaseMetrics } from "../utils/database.server";
+
+// Detailed health check endpoint - GET /health/detailed
+export async function loader() {
+  try {
+    const [dbMetrics, poolHealth] = await Promise.all([
+      getDatabaseMetrics(),
+      connectionPoolHealthCheck()
+    ]);
+
+    return json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: process.env.NODE_ENV || "development",
+      memory: process.memoryUsage(),
+      node_version: process.version,
+      database: dbMetrics,
+      connection_pool: poolHealth
+    });
+  } catch (error) {
+    return json({
+      status: "unhealthy",
+      error: error.message,
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
+  }
+}

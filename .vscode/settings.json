@@ -1,0 +1,70 @@
+{
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.env": true,
+    "**/coverage": true,
+    "**/.nyc_output": true,
+    "**/tmp": true,
+    "**/temp": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/coverage": true,
+    "**/.nyc_output": true
+  },
+  "typescript.preferences.quoteStyle": "double",
+  "javascript.preferences.quoteStyle": "double",
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  "emmet.includeLanguages": {
+    "liquid": "html"
+  },
+  "liquid.format.enable": true,
+  "shopifyLiquid.format.enable": true,
+  "files.associations": {
+    "*.liquid": "liquid",
+    "*.toml": "toml"
+  },
+  "prisma.showPrismaDataPlatformNotification": false,
+  "npm.enableScriptExplorer": true,
+  "git.autofetch": true,
+  "git.enableSmartCommit": true,
+  "explorer.confirmDelete": false,
+  "explorer.confirmDragAndDrop": false,
+  "workbench.colorTheme": "Default Dark+",
+  "terminal.integrated.defaultProfile.osx": "zsh",
+  "debug.console.fontSize": 14,
+  "markdown.preview.breaks": true,
+  "markdown.preview.linkify": true,
+  "eslint.workingDirectories": ["."],
+  "prettier.configPath": "./.prettierrc",
+  "todo-tree.general.tags": [
+    "BUG",
+    "HACK",
+    "FIXME",
+    "TODO",
+    "XXX",
+    "[ ]",
+    "[x]",
+    "SECURITY",
+    "PERFORMANCE"
+  ],
+  "todo-tree.regex.regex": "(//|#|<!--|;|/\\*|^|^\\s*(-|\\*))\\s*($TAGS)",
+  "json.schemas": [
+    {
+      "fileMatch": ["shopify.app.toml"],
+      "url": "https://shopify.dev/docs/api/shopify-cli/app/app-configuration"
+    }
+],
+"[prisma]": {
+    "editor.defaultFormatter": "Prisma.prisma"
+}
+}

@@ -1,0 +1,60 @@
+import * as Sentry from "@sentry/remix";
+
+// Initialize Sentry
+export function initializeSentry() {
+  if (process.env.NODE_ENV === "production") {
+    Sentry.init({
+      dsn: process.env.SENTRY_DSN,
+      environment: process.env.NODE_ENV,
+      tracesSampleRate: 1.0,
+      integrations: [
+        // Add performance monitoring
+        new Sentry.Integrations.Http({ tracing: true }),
+        new Sentry.Integrations.Express({ app: true }),
+      ],
+      beforeSend(event) {
+        // Filter out sensitive data
+        if (event.request) {
+          delete event.request.cookies;
+          if (event.request.headers) {
+            delete event.request.headers.authorization;
+            delete event.request.headers.cookie;
+          }
+        }
+        return event;
+      },
+    });
+  }
+}
+
+// Custom error reporting
+export function reportError(error, context = {}) {
+  if (process.env.NODE_ENV === "production") {
+    Sentry.withScope((scope) => {
+      // Add context to the error
+      Object.keys(context).forEach((key) => {
+        scope.setTag(key, context[key]);
+      });
+      
+      // Capture the error
+      Sentry.captureException(error);
+    });
+  } else {
+    // In development, just log to console
+    console.error("Error:", error);
+    console.error("Context:", context);
+  }
+}
+
+// Performance monitoring
+export function startTransaction(name, description) {
+  if (process.env.NODE_ENV === "production") {
+    return Sentry.startTransaction({
+      name,
+      description,
+    });
+  }
+  return null;
+}
+
+export { Sentry };

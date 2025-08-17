@@ -1,0 +1,52 @@
+import { json } from "@remix-run/node";
+import { cleanupStaleConnections, testDatabaseConnection } from "../utils/database.server";
+
+// Database maintenance endpoint - GET /health/database
+export async function loader() {
+  try {
+    const connectionTest = await testDatabaseConnection();
+    
+    if (!connectionTest.connected) {
+      return json({
+        status: "database_error",
+        error: connectionTest.error,
+        timestamp: new Date().toISOString()
+      }, { status: 503 });
+    }
+
+    return json({
+      status: "database_healthy",
+      connection: connectionTest,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return json({
+      status: "database_error",
+      error: error.message,
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
+  }
+}
+
+// Database cleanup endpoint - POST /health/database
+export async function action({ request }) {
+  if (request.method !== "POST") {
+    return json({ error: "Method not allowed" }, { status: 405 });
+  }
+
+  try {
+    const cleanupResult = await cleanupStaleConnections();
+    
+    return json({
+      status: "cleanup_completed",
+      result: cleanupResult,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return json({
+      status: "cleanup_failed",
+      error: error.message,
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
+  }
+}

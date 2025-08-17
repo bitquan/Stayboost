@@ -1,0 +1,23 @@
+import { json } from "@remix-run/node";
+import { readinessCheck } from "~/utils/health.server";
+
+// Readiness check endpoint - GET /health/ready
+export async function loader() {
+  try {
+    const readinessStatus = await readinessCheck();
+    
+    return json(readinessStatus, {
+      status: readinessStatus.status === 'ready' ? 200 : 503,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch (error) {
+    return json({
+      status: "not_ready",
+      error: error.message,
+      timestamp: new Date().toISOString()
+    }, { status: 503 });
+  }
+}

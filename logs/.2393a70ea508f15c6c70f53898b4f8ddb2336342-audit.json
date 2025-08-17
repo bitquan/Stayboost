@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/incognitolab/My project/Stayboost/logs/.2393a70ea508f15c6c70f53898b4f8ddb2336342-audit.json",
+    "files": [
+        {
+            "date": 1755386606511,
+            "name": "/Users/incognitolab/My project/Stayboost/logs/exceptions-2025-08-16.log",
+            "hash": "dccc079eeb023130711cc99443072960f95c02751e85dd05fbe02b0c16a8ecd9"
+        },
+        {
+            "date": 1755439094896,
+            "name": "/Users/incognitolab/My project/Stayboost/logs/exceptions-2025-08-17.log",
+            "hash": "9593fa4a6b9b72cb96f3358a94e12a869fda5722cd1574a1adc393a203fb97dd"
+        }
+    ],
+    "hashType": "sha256"
+}

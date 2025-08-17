@@ -7,18 +7,70 @@
 			"command": "npm run dev",
 			"isBackground": true,
 			"problemMatcher": [],
-			"group": "build"
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			}
 		},
 		{
-			"label": "Shopify: Dev server",
+			"label": "Run Tests",
 			"type": "shell",
-			"command": "npm run dev",
-			"args": [],
+			"command": "npm",
+			"args": ["test"],
+			"group": "test",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "shared"
+			},
+			"problemMatcher": []
+		},
+		{
+			"label": "Prisma Generate",
+			"type": "shell",
+			"command": "npx",
+			"args": ["prisma", "generate"],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "Prisma Studio",
+			"type": "shell",
+			"command": "npx",
+			"args": ["prisma", "studio"],
+			"group": "build",
 			"isBackground": true,
-			"problemMatcher": [
-				"$tsc"
-			],
-			"group": "build"
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": false,
+				"panel": "shared"
+			}
+		},
+		{
+			"label": "Build for Production",
+			"type": "shell",
+			"command": "npm",
+			"args": ["run", "build"],
+			"group": "build",
+			"presentation": {
+				"echo": true,
+				"reveal": "always",
+				"focus": true,
+				"panel": "shared"
+			}
 		}
 	]
 }

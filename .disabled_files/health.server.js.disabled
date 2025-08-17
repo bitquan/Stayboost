@@ -1,0 +1,323 @@
+import { json } from "@remix-run/node";
+import db from "~/db.server";
+import { reportError } from "~/utils/sentry.server";
+
+// Health check levels
+const HEALTH_LEVELS = {
+  BASIC: 'basic',
+  DETAILED: 'detailed',
+  FULL: 'full',
+};
+
+// Health status types
+const STATUS = {
+  UP: 'up',
+  DOWN: 'down',
+  DEGRADED: 'degraded',
+};
+
+// Individual health checks
+const healthChecks = {
+  // Database connectivity check
+  database: async () => {
+    try {
+      const startTime = Date.now();
+      await db.$queryRaw`SELECT 1`;
+      const responseTime = Date.now() - startTime;
+      
+      return {
+        status: STATUS.UP,
+        responseTime,
+        details: {
+          connected: true,
+          responseTimeMs: responseTime,
+        },
+      };
+    } catch (error) {
+      reportError(error, { healthCheck: 'database' });
+      return {
+        status: STATUS.DOWN,
+        error: error.message,
+        details: {
+          connected: false,
+        },
+      };
+    }
+  },
+
+  // Memory usage check
+  memory: async () => {
+    try {
+      const memoryUsage = process.memoryUsage();
+      const totalMemory = memoryUsage.heapTotal;
+      const usedMemory = memoryUsage.heapUsed;
+      const freeMemory = totalMemory - usedMemory;
+      const usagePercentage = (usedMemory / totalMemory) * 100;
+      
+      // Consider memory degraded if usage > 80%
+      const status = usagePercentage > 90 ? STATUS.DOWN : 
+                   usagePercentage > 80 ? STATUS.DEGRADED : STATUS.UP;
+      
+      return {
+        status,
+        details: {
+          heapUsed: Math.round(usedMemory / 1024 / 1024 * 100) / 100, // MB
+          heapTotal: Math.round(totalMemory / 1024 / 1024 * 100) / 100, // MB
+          heapFree: Math.round(freeMemory / 1024 / 1024 * 100) / 100, // MB
+          usagePercentage: Math.round(usagePercentage * 100) / 100,
+          external: Math.round(memoryUsage.external / 1024 / 1024 * 100) / 100, // MB
+          rss: Math.round(memoryUsage.rss / 1024 / 1024 * 100) / 100, // MB
+        },
+      };
+    } catch (error) {
+      reportError(error, { healthCheck: 'memory' });
+      return {
+        status: STATUS.DOWN,
+        error: error.message,
+      };
+    }
+  },
+
+  // API dependencies check
+  shopifyApi: async () => {
+    try {
+      // Test Shopify API connectivity
+      const response = await fetch('https://partners.shopify.com/api/status', {
+        method: 'GET',
+        timeout: 5000,
+      });
+      
+      const status = response.ok ? STATUS.UP : STATUS.DEGRADED;
+      
+      return {
+        status,
+        details: {
+          statusCode: response.status,
+          accessible: response.ok,
+        },
+      };
+    } catch (error) {
+      return {
+        status: STATUS.DOWN,
+        error: error.message,
+        details: {
+          accessible: false,
+        },
+      };
+    }
+  },
+
+  // Environment variables check
+  environment: async () => {
+    try {
+      const requiredEnvVars = [
+        'SHOPIFY_API_KEY',
+        'SHOPIFY_API_SECRET',
+        'DATABASE_URL',
+      ];
+      
+      const missingVars = requiredEnvVars.filter(varName => !process.env[varName]);
+      const status = missingVars.length > 0 ? STATUS.DOWN : STATUS.UP;
+      
+      return {
+        status,
+        details: {
+          nodeVersion: process.version,
+          nodeEnv: process.env.NODE_ENV,
+          platform: process.platform,
+          uptime: Math.floor(process.uptime()),
+          missingEnvVars: missingVars,
+          hasRequiredEnvVars: missingVars.length === 0,
+        },
+      };
+    } catch (error) {
+      reportError(error, { healthCheck: 'environment' });
+      return {
+        status: STATUS.DOWN,
+        error: error.message,
+      };
+    }
+  },
+
+  // Application version and build info
+  application: async () => {
+    try {
+      const packageJson = await import('../../package.json', { assert: { type: 'json' } });
+      
+      return {
+        status: STATUS.UP,
+        details: {
+          name: packageJson.default.name,
+          version: packageJson.default.version,
+          startTime: new Date().toISOString(), // This would be set at app startup
+          uptime: Math.floor(process.uptime()),
+          pid: process.pid,
+        },
+      };
+    } catch (error) {
+      return {
+        status: STATUS.UP, // Application is running even if we can't read package.json
+        details: {
+          name: 'StayBoost',
+          version: 'unknown',
+          uptime: Math.floor(process.uptime()),
+          pid: process.pid,
+        },
+      };
+    }
+  },
+};
+
+// Perform health checks based on level
+async function performHealthChecks(level = HEALTH_LEVELS.BASIC) {
+  const results = {};
+  const startTime = Date.now();
+  
+  try {
+    switch (level) {
+      case HEALTH_LEVELS.FULL:
+        // Run all health checks
+        results.database = await healthChecks.database();
+        results.memory = await healthChecks.memory();
+        results.shopifyApi = await healthChecks.shopifyApi();
+        results.environment = await healthChecks.environment();
+        results.application = await healthChecks.application();
+        break;
+        
+      case HEALTH_LEVELS.DETAILED:
+        // Run essential checks
+        results.database = await healthChecks.database();
+        results.memory = await healthChecks.memory();
+        results.application = await healthChecks.application();
+        break;
+        
+      case HEALTH_LEVELS.BASIC:
+      default:
+        // Basic connectivity check
+        results.database = await healthChecks.database();
+        results.application = await healthChecks.application();
+        break;
+    }
+    
+    const responseTime = Date.now() - startTime;
+    
+    // Determine overall status
+    const statuses = Object.values(results).map(check => check.status);
+    const overallStatus = statuses.includes(STATUS.DOWN) ? STATUS.DOWN :
+                         statuses.includes(STATUS.DEGRADED) ? STATUS.DEGRADED : STATUS.UP;
+    
+    return {
+      status: overallStatus,
+      timestamp: new Date().toISOString(),
+      responseTime,
+      checks: results,
+      level,
+    };
+  } catch (error) {
+    reportError(error, { action: 'performHealthChecks', level });
+    return {
+      status: STATUS.DOWN,
+      timestamp: new Date().toISOString(),
+      responseTime: Date.now() - startTime,
+      error: error.message,
+      level,
+    };
+  }
+}
+
+// Basic health check endpoint
+export async function basicHealthCheck() {
+  const health = await performHealthChecks(HEALTH_LEVELS.BASIC);
+  const statusCode = health.status === STATUS.UP ? 200 : 
+                    health.status === STATUS.DEGRADED ? 200 : 503;
+  
+  return json(health, { status: statusCode });
+}
+
+// Detailed health check endpoint
+export async function detailedHealthCheck() {
+  const health = await performHealthChecks(HEALTH_LEVELS.DETAILED);
+  const statusCode = health.status === STATUS.UP ? 200 : 
+                    health.status === STATUS.DEGRADED ? 200 : 503;
+  
+  return json(health, { status: statusCode });
+}
+
+// Full health check endpoint
+export async function fullHealthCheck() {
+  const health = await performHealthChecks(HEALTH_LEVELS.FULL);
+  const statusCode = health.status === STATUS.UP ? 200 : 
+                    health.status === STATUS.DEGRADED ? 200 : 503;
+  
+  return json(health, { status: statusCode });
+}
+
+// Readiness check (for Kubernetes/Docker)
+export async function readinessCheck() {
+  try {
+    // Check if the application is ready to serve traffic
+    const dbCheck = await healthChecks.database();
+    const envCheck = await healthChecks.environment();
+    
+    const isReady = dbCheck.status === STATUS.UP && envCheck.status === STATUS.UP;
+    
+    return json({
+      status: isReady ? STATUS.UP : STATUS.DOWN,
+      timestamp: new Date().toISOString(),
+      ready: isReady,
+      checks: {
+        database: dbCheck,
+        environment: envCheck,
+      },
+    }, { 
+      status: isReady ? 200 : 503 
+    });
+  } catch (error) {
+    reportError(error, { action: 'readinessCheck' });
+    return json({
+      status: STATUS.DOWN,
+      timestamp: new Date().toISOString(),
+      ready: false,
+      error: error.message,
+    }, { status: 503 });
+  }
+}
+
+// Liveness check (for Kubernetes/Docker)
+export async function livenessCheck() {
+  try {
+    // Simple check to see if the application is alive
+    return json({
+      status: STATUS.UP,
+      timestamp: new Date().toISOString(),
+      alive: true,
+      uptime: Math.floor(process.uptime()),
+      pid: process.pid,
+    }, { status: 200 });
+  } catch (error) {
+    reportError(error, { action: 'livenessCheck' });
+    return json({
+      status: STATUS.DOWN,
+      timestamp: new Date().toISOString(),
+      alive: false,
+      error: error.message,
+    }, { status: 503 });
+  }
+}
+
+// Health check middleware for Remix routes
+export function withHealthCheck(level = HEALTH_LEVELS.BASIC) {
+  return async () => {
+    switch (level) {
+      case HEALTH_LEVELS.FULL:
+        return await fullHealthCheck();
+      case HEALTH_LEVELS.DETAILED:
+        return await detailedHealthCheck();
+      case HEALTH_LEVELS.BASIC:
+      default:
+        return await basicHealthCheck();
+    }
+  };
+}
+
+export { HEALTH_LEVELS, STATUS };

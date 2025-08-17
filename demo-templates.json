@@ -1,0 +1,58 @@
+{
+  "version": "1.0",
+  "exportedAt": "2025-08-17T21:00:00.000Z",
+  "exportedBy": "demo-store",
+  "templates": [
+    {
+      "name": "Black Friday Mega Sale",
+      "description": "High-converting Black Friday template with urgency",
+      "category": "holiday",
+      "templateType": "custom",
+      "config": {
+        "title": "🔥 BLACK FRIDAY MEGA SALE 🔥",
+        "message": "Don't miss out! Save up to 70% on everything. Limited time only!",
+        "discountCode": "BLACKFRIDAY70",
+        "discountPercentage": 70,
+        "backgroundColor": "#000000",
+        "textColor": "#ffffff",
+        "buttonColor": "#ff0000"
+      },
+      "tags": ["black friday", "sale", "urgent", "holiday"],
+      "conversionRate": 8.5
+    },
+    {
+      "name": "Email Capture Premium",
+      "description": "Professional email capture with newsletter incentive",
+      "category": "newsletter",
+      "templateType": "custom",
+      "config": {
+        "title": "Join Our VIP Newsletter",
+        "message": "Get exclusive deals, early access to sales, and insider tips. Plus 20% off your first order!",
+        "discountCode": "VIP20",
+        "discountPercentage": 20,
+        "backgroundColor": "#f8f9fa",
+        "textColor": "#2c3e50",
+        "buttonColor": "#3498db"
+      },
+      "tags": ["newsletter", "email", "vip", "exclusive"],
+      "conversionRate": 6.7
+    },
+    {
+      "name": "Flash Sale Lightning",
+      "description": "High-energy flash sale template with countdown urgency",
+      "category": "sale",
+      "templateType": "custom",
+      "config": {
+        "title": "⚡ LIGHTNING FLASH SALE ⚡",
+        "message": "Next 2 hours only! Save 40% sitewide. No code needed - discount applied at checkout!",
+        "discountCode": "FLASH40",
+        "discountPercentage": 40,
+        "backgroundColor": "#ffeb3b",
+        "textColor": "#e65100",
+        "buttonColor": "#ff5722"
+      },
+      "tags": ["flash sale", "urgent", "lightning", "limited time"],
+      "conversionRate": 7.2
+    }
+  ]
+}

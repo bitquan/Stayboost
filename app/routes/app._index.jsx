@@ -1,66 +1,250 @@
-import { useState, useCallback } from "react";
-import { useFetcher } from "@remix-run/react";
+/**
+ * StayBoost Main Admin Dashboard
+ * Primary interface for popup configuration and analytics
+ * 
+ * TODO: Missing Features and Integration
+ * - [ ] Add A/B testing interface and controls
+ * - [ ] Integrate popup scheduling functionality
+ * - [ ] Add frequency controls configuration
+ * - [ ] Implement multi-language settings
+ * - [ ] Add advanced analytics dashboard
+ * - [ ] Integrate visual popup designer
+ * - [ ] Add popup template selector
+ * - [ ] Implement real-time preview updates
+ * - [ ] Add conversion rate optimization suggestions
+ * - [ ] Integrate performance monitoring dashboard
+ * 
+ * TODO: Testing Needed
+ * - [ ] Unit tests for React components
+ * - [ ] Integration tests with settings API
+ * - [ ] E2E tests for complete configuration workflow
+ * - [ ] Accessibility testing (WCAG compliance)
+ * - [ ] Mobile responsiveness testing
+ * - [ ] Form validation and error handling tests
+ * - [ ] Analytics data display tests
+ * - [ ] Cross-browser compatibility tests
+ */
+
+import { useFetcher, useLoaderData } from "@remix-run/react";
+import { TitleBar } from "@shopify/app-bridge-react";
 import {
-  Page,
-  Layout,
-  Text,
-  Card,
-  Button,
-  BlockStack,
-  InlineStack,
-  TextField,
-  Select,
-  Checkbox,
-  Badge,
-  Divider,
+    Badge,
+    BlockStack,
+    Button,
+    Card,
+    Checkbox,
+    Divider,
+    InlineStack,
+    Layout,
+    Page,
+    Text,
+    TextField,
 } from "@shopify/polaris";
-import { TitleBar, useAppBridge } from "@shopify/app-bridge-react";
+import { useCallback, useState } from "react";
+import { defaults, getPopupSettings, savePopupSettings } from "../models/popupSettings.server";
 import { authenticate } from "../shopify.server";
-import { getPopupSettings, savePopupSettings, defaults } from "../models/popupSettings.server";
+import {
+    detectSuspiciousInput,
+    InputValidator,
+    ValidationError
+} from "../utils/inputValidation.server";
+import {
+    createTimer,
+    log,
+    LOG_CATEGORIES,
+    logBusinessMetric,
+    logError,
+    logRequest
+} from "../utils/logger.server";
 
 export const loader = async ({ request }) => {
+  const { getDashboardStats } = await import("../models/analytics.server");
   const { session } = await authenticate.admin(request);
   const settings = await getPopupSettings(session.shop);
-  return { settings, stats: { impressions: 0, conversions: 0, conversionRate: 0 } };
+  
+  // Get analytics with fallback to defaults if there's an error
+  let stats;
+  try {
+    stats = await getDashboardStats(session.shop);
+  } catch (error) {
+    console.error('Error fetching analytics:', error);
+    stats = { 
+      allTime: { impressions: 0, conversions: 0, conversionRate: 0 }
+    };
+  }
+  
+  return { settings, stats };
 };
 
 export const action = async ({ request }) => {
-  const { session } = await authenticate.admin(request);
-  const formData = await request.formData();
-  const action = formData.get("action");
+  const timer = createTimer('app_settings_action', LOG_CATEGORIES.API);
+  const correlationId = logRequest(request);
 
-  if (action === "saveSettings") {
-    const settings = {
-      enabled: formData.get("enabled") === "true",
-      title: formData.get("title") ?? defaults.title,
-      message: formData.get("message") ?? defaults.message,
-      discountCode: formData.get("discountCode") ?? defaults.discountCode,
-      discountPercentage: parseInt(formData.get("discountPercentage")),
-      delaySeconds: parseInt(formData.get("delaySeconds")),
-      showOnce: formData.get("showOnce") === "true",
+  try {
+    const { session } = await authenticate.admin(request);
+    const formData = await request.formData();
+    const action = formData.get("action");
+
+    if (action === "saveSettings") {
+      timer.checkpoint('save_settings_start');
+
+      // Extract and validate form data
+      const rawSettings = {
+        enabled: formData.get("enabled"),
+        title: formData.get("title"),
+        message: formData.get("message"),
+        discountCode: formData.get("discountCode"),
+        discountPercentage: formData.get("discountPercentage"),
+        delaySeconds: formData.get("delaySeconds"),
+        showOnce: formData.get("showOnce"),
+      };
+
+      // Validate all text inputs for suspicious content
+      const textFields = ['title', 'message', 'discountCode'];
+      for (const field of textFields) {
+        const value = rawSettings[field];
+        if (value && detectSuspiciousInput(value, 'content')) {
+          timer.checkpoint('suspicious_input_detected');
+          
+          log.warn('Suspicious input detected in popup settings', {
+            field,
+            shop: session.shop,
+            value: value.substring(0, 50),
+            category: LOG_CATEGORIES.SECURITY,
+            correlationId,
+          });
+
+          return { 
+            success: false, 
+            error: `Invalid ${field}: contains suspicious content` 
+          };
+        }
+      }
+
+      // Validate and sanitize numeric inputs
+      let discountPercentage = parseInt(rawSettings.discountPercentage);
+      if (isNaN(discountPercentage) || discountPercentage < 0 || discountPercentage > 100) {
+        timer.checkpoint('discount_validation_failed');
+        
+        log.warn('Invalid discount percentage provided', {
+          discountPercentage: rawSettings.discountPercentage,
+          shop: session.shop,
+          category: LOG_CATEGORIES.API,
+          correlationId,
+        });
+
+        return { 
+          success: false, 
+          error: "Discount percentage must be between 0 and 100" 
+        };
+      }
+
+      let delaySeconds = parseInt(rawSettings.delaySeconds);
+      if (isNaN(delaySeconds) || delaySeconds < 0 || delaySeconds > 60) {
+        timer.checkpoint('delay_validation_failed');
+        
+        log.warn('Invalid delay seconds provided', {
+          delaySeconds: rawSettings.delaySeconds,
+          shop: session.shop,
+          category: LOG_CATEGORIES.API,
+          correlationId,
+        });
+
+        return { 
+          success: false, 
+          error: "Delay seconds must be between 0 and 60" 
+        };
+      }
+
+      // Create sanitized settings object
+      const settings = {
+        enabled: rawSettings.enabled === "true",
+        title: rawSettings.title ?? defaults.title,
+        message: rawSettings.message ?? defaults.message,
+        discountCode: rawSettings.discountCode ?? defaults.discountCode,
+        discountPercentage,
+        delaySeconds,
+        showOnce: rawSettings.showOnce === "true",
+      };
+
+      // Additional validation using InputValidator
+      try {
+        const validatedSettings = InputValidator.sanitizePopupSettings(settings);
+        timer.checkpoint('settings_validated');
+
+        const saved = await savePopupSettings(session.shop, validatedSettings);
+        timer.checkpoint('settings_saved');
+
+        // Log business metric
+        logBusinessMetric('popup_settings_updated', 1, 'count', {
+          shop: session.shop,
+          enabled: validatedSettings.enabled,
+          correlationId,
+        });
+
+        log.info('Popup settings successfully updated', {
+          shop: session.shop,
+          enabled: validatedSettings.enabled,
+          category: LOG_CATEGORIES.BUSINESS,
+          correlationId,
+        });
+
+        return { success: true, settings: saved };
+
+      } catch (error) {
+        timer.checkpoint('validation_error');
+        
+        if (error instanceof ValidationError) {
+          log.warn('Settings validation failed', {
+            shop: session.shop,
+            error: error.message,
+            category: LOG_CATEGORIES.API,
+            correlationId,
+          });
+
+          return { 
+            success: false, 
+            error: `Validation failed: ${error.message}` 
+          };
+        }
+        
+        throw error;
+      }
+    }
+
+    timer.checkpoint('invalid_action');
+    log.warn('Invalid action provided', {
+      action,
+      shop: session.shop,
+      category: LOG_CATEGORIES.API,
+      correlationId,
+    });
+
+    return { success: false, error: "Invalid action" };
+
+  } catch (error) {
+    timer.checkpoint('error_occurred');
+    
+    logError(error, {
+      endpoint: '/app',
+      action: 'settings_update',
+      correlationId,
+      category: LOG_CATEGORIES.ERROR,
+    });
+
+    return { 
+      success: false, 
+      error: "Internal server error" 
     };
-    const saved = await savePopupSettings(session.shop, settings);
-    return { success: true, settings: saved };
   }
-
-  return { success: false };
 };
 
 export default function Index() {
-  const { data } = useFetcher();
+  const { settings: initialSettings, stats } = useLoaderData();
   const fetcher = useFetcher();
-  const shopify = useAppBridge();
   
   // Form state
-  const [settings, setSettings] = useState({
-    enabled: true,
-    title: "Wait! Don't leave yet!",
-    message: "Get 10% off your first order",
-    discountCode: "SAVE10",
-    discountPercentage: 10,
-    delaySeconds: 2,
-    showOnce: true,
-  });
+  const [settings, setSettings] = useState(initialSettings);
 
   const isLoading = ["loading", "submitting"].includes(fetcher.state);
 
@@ -107,15 +291,15 @@ export default function Index() {
                 <InlineStack gap="600">
                   <div>
                     <Text as="p" variant="bodyMd" tone="subdued">Impressions</Text>
-                    <Text as="p" variant="headingLg">1,250</Text>
+                    <Text as="p" variant="headingLg">{(stats?.allTime?.impressions || 0).toLocaleString()}</Text>
                   </div>
                   <div>
                     <Text as="p" variant="bodyMd" tone="subdued">Conversions</Text>
-                    <Text as="p" variant="headingLg">89</Text>
+                    <Text as="p" variant="headingLg">{(stats?.allTime?.conversions || 0).toLocaleString()}</Text>
                   </div>
                   <div>
                     <Text as="p" variant="bodyMd" tone="subdued">Conversion Rate</Text>
-                    <Text as="p" variant="headingLg">7.1%</Text>
+                    <Text as="p" variant="headingLg">{stats?.allTime?.conversionRate || 0}%</Text>
                   </div>
                 </InlineStack>
               </BlockStack>
@@ -250,17 +434,17 @@ export default function Index() {
                   
                   <InlineStack align="space-between">
                     <Text as="span" variant="bodyMd">Today's Impressions</Text>
-                    <Text as="span" variant="bodySm">47</Text>
+                    <Text as="span" variant="bodySm">{(stats?.today?.impressions || 0).toLocaleString()}</Text>
                   </InlineStack>
                   
                   <InlineStack align="space-between">
                     <Text as="span" variant="bodyMd">Today's Conversions</Text>
-                    <Text as="span" variant="bodySm">4</Text>
+                    <Text as="span" variant="bodySm">{(stats?.today?.conversions || 0).toLocaleString()}</Text>
                   </InlineStack>
                   
                   <InlineStack align="space-between">
                     <Text as="span" variant="bodyMd">Revenue Recovered</Text>
-                    <Text as="span" variant="bodySm">$127.50</Text>
+                    <Text as="span" variant="bodySm">${(stats?.today?.revenue || 0).toFixed(2)}</Text>
                   </InlineStack>
                 </BlockStack>
               </Card>

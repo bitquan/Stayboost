@@ -1,6 +1,11 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+// TODO: Database Schema Implementation Priority
+// Phase 1 (HIGH): A/B testing, scheduling, frequency controls
+// Phase 2 (MEDIUM): Multi-language, analytics, templates
+// Phase 3 (LOW): Advanced features, integrations
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,7 +15,7 @@ generator client {
 // See https://www.prisma.io/docs/orm/reference/prisma-schema-reference#string for more information
 datasource db {
   provider = "sqlite"
-  url      = "file:dev.sqlite"
+  url      = env("DATABASE_URL")
 }
 
 model Session {
@@ -38,10 +43,385 @@ model PopupSettings {
   enabled            Boolean  @default(true)
   title              String   @default("Wait! Don't leave yet!")
   message            String   @default("Get 10% off your first order")
-  discountCode       String?  @default("SAVE10")
-  discountPercentage Int?     @default(10)
+  discountCode       String   @default("SAVE10")
+  discountPercentage Int      @default(10)
   delaySeconds       Int      @default(2)
   showOnce           Boolean  @default(true)
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
+
+  // Relations to new features
+  abTests           ABTest[]
+  schedules         PopupSchedule[]
+  frequencyTracking PopupFrequencyTracking[]
+  translations      PopupTranslation[]
+}
+
+// A/B Testing Tables
+model ABTest {
+  id                      Int       @id @default(autoincrement())
+  shop                    String
+  popupSettingsId         Int?
+  name                    String
+  description             String?
+  status                  String    @default("draft") // draft, active, completed, paused
+  testType                String // popup_design, message_content, discount_amount, timing
+  trafficAllocation       Float     @default(50.0)
+  variants                String // JSON string
+  startDate               DateTime?
+  endDate                 DateTime?
+  statisticalSignificance Float     @default(0.0)
+  winnerVariantId         String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  popupSettings PopupSettings?    @relation(fields: [popupSettingsId], references: [id])
+  results       ABTestResult[]
+  statistics    ABTestStatistic[]
+
+  @@unique([shop, name])
+}
+
+model ABTestResult {
+  id              Int      @id @default(autoincrement())
+  abTestId        Int
+  variantId       String
+  userId          String?
+  sessionId       String?
+  eventType       String // impression, conversion, dismissal, interaction
+  conversionValue Float    @default(0.0)
+  userAgent       String?
+  ipAddress       String?
+  geographicData  String? // JSON string
+  timestamp       DateTime @default(now())
+
+  abTest ABTest @relation(fields: [abTestId], references: [id], onDelete: Cascade)
+}
+
+model ABTestStatistic {
+  id                      Int      @id @default(autoincrement())
+  abTestId                Int
+  variantId               String
+  date                    DateTime
+  impressions             Int      @default(0)
+  conversions             Int      @default(0)
+  conversionRate          Float    @default(0.0)
+  revenue                 Float    @default(0.0)
+  statisticalSignificance Float    @default(0.0)
+  confidenceIntervalLower Float    @default(0.0)
+  confidenceIntervalUpper Float    @default(0.0)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  abTest ABTest @relation(fields: [abTestId], references: [id], onDelete: Cascade)
+
+  @@unique([abTestId, variantId, date])
+}
+
+// Scheduling Tables
+model PopupSchedule {
+  id                 Int       @id @default(autoincrement())
+  shop               String
+  popupSettingsId    Int?
+  name               String
+  description        String?
+  scheduleType       String // one_time, daily, weekly, monthly, yearly, custom
+  startDate          DateTime
+  endDate            DateTime?
+  timezone           String    @default("UTC")
+  recurrenceRule     String? // JSON string
+  isActive           Boolean   @default(true)
+  priority           Int       @default(0)
+  conflictResolution String    @default("first_wins")
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  popupSettings PopupSettings?       @relation(fields: [popupSettingsId], references: [id])
+  activations   ScheduleActivation[]
+
+  @@unique([shop, name])
+}
+
+model ScheduleActivation {
+  id               Int       @id @default(autoincrement())
+  scheduleId       Int
+  activationTime   DateTime
+  deactivationTime DateTime?
+  status           String    @default("active") // active, completed, failed, cancelled
+  activationData   String? // JSON string
+  errorMessage     String?
+  createdAt        DateTime  @default(now())
+
+  schedule PopupSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+}
+
+// Frequency Control Tables
+model PopupFrequencyTracking {
+  id                Int       @id @default(autoincrement())
+  shop              String
+  userIdentifier    String
+  popupSettingsId   Int?
+  displayCount      Int       @default(0)
+  lastDisplay       DateTime?
+  conversionCount   Int       @default(0)
+  lastConversion    DateTime?
+  dismissalCount    Int       @default(0)
+  lastDismissal     DateTime?
+  userState         String    @default("new_visitor")
+  behaviorScore     Float     @default(0.0)
+  adaptiveFrequency Float     @default(1.0)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  popupSettings PopupSettings? @relation(fields: [popupSettingsId], references: [id])
+
+  @@unique([shop, userIdentifier, popupSettingsId])
+}
+
+model FrequencyRule {
+  id                Int      @id @default(autoincrement())
+  shop              String
+  name              String
+  ruleType          String // global, per_user, per_session, per_page, smart_adaptive
+  maxPerHour        Int      @default(0)
+  maxPerDay         Int      @default(0)
+  maxPerWeek        Int      @default(0)
+  maxPerMonth       Int      @default(0)
+  minInterval       Int      @default(300) // seconds
+  cooldownPeriod    Int      @default(3600) // seconds
+  smartAdaptive     Boolean  @default(false)
+  adaptiveAlgorithm String? // JSON string
+  targetSegments    String? // JSON string
+  isActive          Boolean  @default(true)
+  priority          Int      @default(0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([shop, name])
+}
+
+// Multi-language Tables
+model PopupTranslation {
+  id                  Int       @id @default(autoincrement())
+  popupSettingsId     Int
+  languageCode        String
+  namespace           String    @default("popup")
+  title               String?
+  message             String?
+  buttonText          String?
+  dismissText         String?
+  discountCode        String?
+  placeholderText     String?
+  errorMessages       String? // JSON string
+  successMessages     String? // JSON string
+  accessibilityLabels String? // JSON string
+  customFields        String? // JSON string
+  isComplete          Boolean   @default(false)
+  completenessScore   Float     @default(0.0)
+  translationQuality  Float     @default(0.0)
+  lastValidated       DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  popupSettings PopupSettings @relation(fields: [popupSettingsId], references: [id], onDelete: Cascade)
+
+  @@unique([popupSettingsId, languageCode, namespace])
+}
+
+// Analytics enhancement to support advanced features
+model PopupAnalytics {
+  id             Int      @id @default(autoincrement())
+  shop           String
+  date           DateTime
+  impressions    Int      @default(0)
+  conversions    Int      @default(0)
+  conversionRate Float    @default(0.0)
+  revenue        Float    @default(0.0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([shop, date])
+}
+
+model AnalyticsEvent {
+  id        Int      @id @default(autoincrement())
+  shop      String
+  eventType String // popup_viewed, popup_engaged, popup_converted, popup_dismissed, discount_claimed, discount_applied, added_to_cart
+  popupId   String?
+  visitorId String?
+  metadata  String? // JSON string for additional data
+  timestamp DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([shop])
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([visitorId])
+}
+
+// Smart Targeting Tables
+model TargetingRule {
+  id          Int      @id @default(autoincrement())
+  shop        String
+  name        String
+  description String?
+  ruleType    String // behavioral, geographic, device, traffic_source, timing
+  conditions  String // JSON string containing rule conditions
+  priority    Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  segments   CustomerSegment[]
+  executions TargetingExecution[]
+
+  @@index([shop])
+  @@index([isActive])
+  @@index([priority])
+}
+
+model TargetingExecution {
+  id                  Int      @id @default(autoincrement())
+  targetingRuleId     Int
+  visitorId           String?
+  sessionId           String?
+  matched             Boolean  @default(false)
+  executionTime       Float    @default(0.0)
+  conditionsEvaluated String? // JSON string
+  resultData          String? // JSON string
+  createdAt           DateTime @default(now())
+
+  targetingRule TargetingRule @relation(fields: [targetingRuleId], references: [id], onDelete: Cascade)
+
+  @@index([targetingRuleId])
+  @@index([matched])
+  @@index([createdAt])
+}
+
+model CustomerSegment {
+  id             Int       @id @default(autoincrement())
+  shop           String
+  name           String
+  description    String?
+  segmentType    String // behavioral, demographic, geographic, purchase_history
+  criteria       String // JSON string containing segment criteria
+  estimatedSize  Int       @default(0)
+  isActive       Boolean   @default(true)
+  lastCalculated DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  targetingRules TargetingRule[]
+
+  @@index([shop])
+  @@index([isActive])
+  @@index([segmentType])
+}
+
+// Templates Tables
+model PopupTemplate {
+  id             Int       @id @default(autoincrement())
+  shop           String
+  name           String
+  description    String?
+  category       String // discount, seasonal, shipping, announcement, upsell, survey
+  templateType   String    @default("custom") // built_in, custom, imported
+  config         String // JSON string containing template configuration
+  previewImage   String?
+  isPublic       Boolean   @default(false)
+  isFeatured     Boolean   @default(false)
+  usageCount     Int       @default(0)
+  averageRating  Float     @default(0.0)
+  ratingCount    Int       @default(0)
+  conversionRate Float     @default(0.0)
+  tags           String? // JSON string array
+  lastUsed       DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  usageStats TemplateUsageStats[]
+  ratings    TemplateRating[]
+
+  @@index([shop])
+  @@index([category])
+  @@index([isFeatured])
+  @@index([usageCount])
+}
+
+model TemplateUsageStats {
+  id             Int      @id @default(autoincrement())
+  templateId     Int
+  shop           String
+  date           DateTime
+  usageCount     Int      @default(0)
+  impressions    Int      @default(0)
+  conversions    Int      @default(0)
+  dismissals     Int      @default(0)
+  conversionRate Float    @default(0.0)
+  revenue        Float    @default(0.0)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  template PopupTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, shop, date])
+  @@index([templateId])
+  @@index([date])
+}
+
+model TemplateRating {
+  id         Int      @id @default(autoincrement())
+  templateId Int
+  shop       String
+  rating     Int // 1-5 stars
+  review     String?
+  createdAt  DateTime @default(now())
+
+  template PopupTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, shop])
+  @@index([templateId])
+  @@index([rating])
+}
+
+// Integrations Tables
+model Integration {
+  id            Int       @id @default(autoincrement())
+  shop          String
+  name          String
+  provider      String // mailchimp, klaviyo, hubspot, salesforce, google_analytics, facebook_pixel, zapier, slack
+  status        String    @default("disconnected") // disconnected, connected, syncing, error
+  isActive      Boolean   @default(true)
+  config        String // JSON string containing integration configuration
+  syncFrequency String    @default("daily") // manual, hourly, daily, weekly
+  lastSync      DateTime?
+  webhookUrl    String?
+  errorMessage  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  syncLogs IntegrationSyncLog[]
+
+  @@index([shop])
+  @@index([provider])
+  @@index([status])
+}
+
+model IntegrationSyncLog {
+  id               Int      @id @default(autoincrement())
+  integrationId    Int
+  syncType         String // scheduled, manual, webhook, connection_test
+  status           String // success, failed, partial
+  message          String?
+  recordsProcessed Int      @default(0)
+  errorDetails     String? // JSON string for detailed error information
+  duration         Float    @default(0.0) // Sync duration in seconds
+  createdAt        DateTime @default(now())
+
+  integration Integration @relation(fields: [integrationId], references: [id], onDelete: Cascade)
+
+  @@index([integrationId])
+  @@index([status])
+  @@index([createdAt])
 }

@@ -1,0 +1,17 @@
+import { json } from "@remix-run/node";
+
+// Liveness check endpoint - GET /health/live
+export async function loader() {
+  try {
+    return json({
+      status: "alive",
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    return json({
+      status: "dead",
+      error: error.message,
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
+  }
+}

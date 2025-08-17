@@ -56,10 +56,26 @@ This is a Shopify app called StayBoost that captures abandoning customers with e
   - ✅ Bulk template import with overwrite protection and error handling
   - ✅ Exportable template filtering (custom + built-in templates)
   - ✅ Import validation with detailed success/error reporting
-- [ ] **Advanced Template Preview** - Real-time preview with merchant's branding
+- [x] **Advanced Template Preview** - Real-time preview with merchant's branding
+  - ✅ Created `AdvancedTemplatePreview.jsx` component with device-responsive previews
+  - ✅ Built `merchantBranding.server.js` service with Shopify API integration and caching
+  - ✅ Created `/api/merchant-branding` endpoint for branding data with theme support
+  - ✅ Integrated advanced preview into templates page with "Advanced Preview" buttons
+  - ✅ Device-responsive previews (Desktop 1200px, Tablet 768px, Mobile 375px)
+  - ✅ Real-time merchant branding application (colors, fonts, shop name)
+  - ✅ Full-screen modal with apply functionality and smooth animations
+  - ✅ Cached performance with 5-minute merchant data expiration
 
 ### Medium Priority
-- [ ] **Template Categories Enhancement** - Add seasonal/event-based categories
+- [x] **Template Categories Enhancement** - Add seasonal/event-based categories
+  - ✅ Enhanced TEMPLATE_CATEGORIES from 5 to 16 comprehensive categories
+  - ✅ Added seasonal categories: spring, summer, fall, winter with themed templates
+  - ✅ Added event categories: Black Friday, Cyber Monday, Valentine's, Mother's/Father's Day, Back to School, New Year
+  - ✅ Added special categories: birthday, flash sale, clearance with targeted templates
+  - ✅ Created comprehensive template seeder with 18 new seasonal/event templates
+  - ✅ Seeded 40 total templates across 18 categories in database
+  - ✅ Enhanced template filtering and organization system
+  - ✅ Comprehensive test coverage with 12/12 tests passing
 - [ ] **Template Favorites** - Allow merchants to favorite templates
 - [ ] **Template Search** - Add search functionality across templates
 - [ ] **Template Analytics Dashboard** - Show template performance metrics

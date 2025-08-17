@@ -1,0 +1,23 @@
+import { json } from "@remix-run/node";
+import { basicHealthCheck } from "~/utils/health.server";
+
+// Basic health check endpoint - GET /health
+export async function loader() {
+  try {
+    const healthStatus = await basicHealthCheck();
+    
+    return json(healthStatus, {
+      status: healthStatus.status === 'healthy' ? 200 : 503,
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Content-Type': 'application/json',
+      },
+    });
+  } catch (error) {
+    return json({
+      status: "unhealthy",
+      error: error.message,
+      timestamp: new Date().toISOString()
+    }, { status: 500 });
+  }
+}

@@ -50,7 +50,22 @@ const TEMPLATE_CATEGORIES = {
   exit_intent: "Exit Intent",
   sale: "Sale & Promotions", 
   holiday: "Holiday & Seasonal",
-  newsletter: "Newsletter Signup"
+  newsletter: "Newsletter Signup",
+  // Enhanced seasonal/event-based categories
+  seasonal_spring: "Spring Collection",
+  seasonal_summer: "Summer Sale",
+  seasonal_fall: "Fall/Autumn",
+  seasonal_winter: "Winter Special",
+  event_black_friday: "Black Friday",
+  event_cyber_monday: "Cyber Monday",
+  event_valentines: "Valentine's Day",
+  event_mothers_day: "Mother's Day",
+  event_fathers_day: "Father's Day",
+  event_back_to_school: "Back to School",
+  event_new_year: "New Year",
+  special_birthday: "Birthday & Anniversary",
+  special_flash_sale: "Flash Sales",
+  special_clearance: "Clearance & End of Season"
 };
 
 export default function Templates() {
