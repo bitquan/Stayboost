@@ -11,23 +11,199 @@ This is a Shopify app called StayBoost that captures abandoning customers with e
 - [x] Install Required Extensions - No additional extensions needed
 - [x] Compile the Project - Build successful with StayBoost interface
 - [x] Create and Run Task - Development server task created and started
-- [x] Launch the Project - Development server ready for use
-- [x] Ensure Documentation is Complete - README updated with StayBoost details
-- [ ] Create and Run Task
-- [ ] Launch the Project
-- [ ] Ensure Documentation is Complete
+- [x] Launch the Project - Development server running on tinyplugs.myshopify.com
+- [x] Ensure Documentation is Complete - README, LAUNCH_SUMMARY, and comprehensive tests
+- [x] Database Schema - PopupSettings + PopupTemplate models implemented with Prisma
+- [x] Frontend Interface - Complete admin dashboard with preview and template library
+- [x] Theme Extension - JavaScript popup and Liquid block for storefront
+- [x] API Endpoints - Settings API for frontend-backend communication
+- [x] Template System - 22 professional templates across 4 categories implemented
+- [x] Template Database - Seeded with default templates and usage statistics
+- [x] Template Authentication - Fixed server-side loading and Shopify admin authentication
+- [x] Template JSON Parsing - Added proper config field parsing for database templates
+- [x] Comprehensive Testing - 19/19 tests passing (smoke + functional + integration)
+- [x] Production Build - Successful build with optimized assets
+- [x] Demo Scripts - Complete validation and demo scripts created
 
-## Project Details
+## New Tasks for Copilot
 
-- **Type**: Shopify App
-- **Name**: StayBoost
-- **Purpose**: Exit-intent popup app to capture abandoning customers with discount offers
-- **Tech Stack**: Node.js, React, Shopify CLI
-- **Features**: Exit-intent detection, popup customization, analytics dashboard
+### High Priority (Next Sprint)
+- [x] **Apply Template Functionality** - Implement template application to popup settings
+  - ✅ Created `/api/apply-template` endpoint with authentication
+  - ✅ Template config parsing and popup settings integration
+  - ✅ Usage statistics tracking and template usage count updates
+  - ✅ Loading states and error handling in UI
+  - ✅ One-click template application working end-to-end
+- [x] **Template Performance Tracking** - Add conversion rate tracking per template
+  - ✅ Created `/api/track-performance` endpoint for impression/conversion/dismiss tracking
+  - ✅ Enhanced database schema with dismissals field in TemplateUsageStats
+  - ✅ Theme extension JavaScript updated with comprehensive tracking functions
+  - ✅ Created `/api/template-analytics` endpoint for performance data retrieval
+  - ✅ Built complete analytics dashboard at `/app/analytics` with performance metrics
+  - ✅ Added navigation integration and comprehensive test coverage (16/16 tests passing)
+  - ✅ Session-based tracking with automatic conversion rate calculations
+- [x] **Custom Template Creation** - Allow merchants to create custom templates
+  - ✅ Created `/api/custom-templates` endpoint with full CRUD operations (POST, PUT, DELETE)
+  - ✅ Built `CustomTemplateModal.jsx` component with comprehensive form controls and styling options
+  - ✅ Created `TemplatePreview.jsx` component for live preview functionality
+  - ✅ Integrated custom template management into templates page with edit/delete capabilities
+  - ✅ Template validation, authentication, and error handling implemented
+  - ✅ One-click custom template creation and application working end-to-end
+- [x] **Template Import/Export** - Enable template sharing between stores
+  - ✅ Created `/api/template-import-export` endpoint with import/export functionality
+  - ✅ Built `TemplateImportExportModal.jsx` component with file upload and template selection
+  - ✅ JSON-based export format with version control and metadata
+  - ✅ Bulk template import with overwrite protection and error handling
+  - ✅ Exportable template filtering (custom + built-in templates)
+  - ✅ Import validation with detailed success/error reporting
+- [ ] **Advanced Template Preview** - Real-time preview with merchant's branding
+
+### Medium Priority
+- [ ] **Template Categories Enhancement** - Add seasonal/event-based categories
+- [ ] **Template Favorites** - Allow merchants to favorite templates
+- [ ] **Template Search** - Add search functionality across templates
+- [ ] **Template Analytics Dashboard** - Show template performance metrics
+- [ ] **A/B Testing for Templates** - Compare template performance
+
+### Low Priority (Future Enhancements)
+- [ ] **Template Marketplace** - Community template sharing
+- [ ] **AI Template Generation** - Generate templates based on merchant data
+- [ ] **Template Localization** - Multi-language template support
+- [ ] **Template Scheduling** - Schedule template changes
+- [ ] **Template API v2** - Enhanced API with better performance
+
+## Project Architecture & File Structure
+
+### Core Application Files
+
+- **`package.json`**: Main dependencies (Remix, Shopify Polaris, Prisma, Shopify App Remix)
+- **`shopify.app.toml`**: App configuration (client_id: 8279a1a1278f468713b7aaf5fad1f7dc, name: StayBoost)
+- **`app/shopify.server.js`**: Shopify app initialization with Prisma session storage
+- **`app/db.server.js`**: Prisma client setup for database operations
+
+### Frontend Interface
+
+- **`app/routes/app._index.jsx`**: Main dashboard with settings form, preview, and analytics
+  - Settings management (enable/disable, title, message, discount code, percentage, delay, show once)
+  - Live preview of popup appearance
+  - Mock analytics display (impressions, conversions, conversion rate)
+  - Uses Shopify Polaris components for consistent UI
+
+- **`app/routes/app.templates.jsx`**: Template library interface with 22 professional templates
+  - Template browsing by category (Exit Intent, Sales, Holiday, Newsletter)
+  - Live template preview with real-time styling
+  - Server-side template loading via Remix loader (fixed authentication issues)
+  - JSON config parsing for database templates with error handling
+  - Fallback template system for reliable display
+  - One-click template application to popup settings
+
+- **`app/routes/app.jsx`**: App wrapper with Polaris styling and navigation
+
+### Backend & Database
+
+- **`prisma/schema.prisma`**: Database schema with extended models:
+  - `Session`: Shopify app session management
+  - `PopupSettings`: Stores popup configuration per shop (enabled, title, message, discountCode, discountPercentage, delaySeconds, showOnce)
+  - `PopupTemplate`: Template library with config JSON field, usage statistics, and ratings (22 seeded templates)
+  - `TemplateUsageStats`: Track template performance metrics
+  - `TemplateRating`: User ratings for templates
+
+- **`app/models/popupSettings.server.js`**: Data layer for popup settings
+  - `getPopupSettings()`: Retrieves settings with defaults fallback
+  - `savePopupSettings()`: Upserts settings to database
+  - Default values: enabled=true, title="Wait! Don't leave yet!", message="Get 10% off your first order", discountCode="SAVE10", discountPercentage=10, delaySeconds=2, showOnce=true
+
+- **`prisma/seed-templates.js`**: Template seeder with 22 professional templates
+  - 5 Exit Intent templates (Classic, First-time visitor, Cart abandonment, Loyalty rewards, Referral bonus)
+  - 7 Sales templates (Flash sale, Last chance, VIP access, Student discount, Weekend sale, Midnight sale, Free shipping)
+  - 6 Holiday templates (Christmas, Birthday, Summer, Black Friday, Spring cleaning, Premium membership)
+  - 4 Newsletter templates (Email capture, Back-in-stock, Review incentive, New arrivals)
+  - Templates stored with config JSON field containing all popup styling and content
+  - Successfully seeded and accessible via server-side loader
+
+### API Layer
+
+- **`app/routes/api.stayboost.settings.jsx`**: Public CORS-enabled endpoint
+  - Returns popup settings for a given shop parameter
+  - Used by theme extension to fetch configuration
+  - Includes proper CORS headers for cross-origin requests
+
+- **`app/routes/api.templates.jsx`**: Template management API endpoint
+  - Server-side template CRUD operations with authentication
+  - Supports both default and shop-specific templates
+  - Enhanced query filtering with OR conditions for template access
+  - Includes usage statistics and template performance tracking
+
+### Theme Extension (Storefront Integration)
+
+- **`extensions/stayboost-theme/`**: Theme app extension for Shopify stores
+  - **`shopify.extension.toml`**: Extension configuration
+  - **`blocks/stayboost-popup.liquid`**: Liquid block for theme integration
+    - Loads JavaScript with API URL and shop domain
+    - Configurable through theme editor
+  - **`assets/stayboost-popup.js`**: Client-side popup implementation
+    - Fetches settings from API endpoint
+    - Exit-intent detection (mouse leaves viewport top)
+    - Mobile support (back button detection)
+    - Session storage for "show once" functionality
+    - Responsive popup styling
+
+## Data Flow & Integration
+
+1. **Admin Configuration**: Merchant configures popup settings in `app._index.jsx`
+2. **Database Storage**: Settings saved via `popupSettings.server.js` to Prisma database
+3. **API Exposure**: Settings exposed through `api.stayboost.settings.jsx` endpoint
+4. **Theme Integration**: Merchant adds Liquid block to theme, configures API URL
+5. **Storefront Display**: JavaScript fetches settings and displays exit-intent popup
+
+## Key Features Implementation
+
+### Exit-Intent Detection
+
+- Desktop: Mouse leaving viewport from top (`clientY <= 0`)
+- Mobile: Browser back button via `popstate` event
+- Configurable delay before popup can trigger
+
+### Popup Behavior
+
+- Show once per session (optional, using sessionStorage)
+- Customizable content (title, message, discount code/percentage)
+- Modal overlay with backdrop click to dismiss
+- Two action buttons: claim offer and dismiss
+
+### Settings Management
+
+- Real-time preview in admin interface
+- Form validation and state management
+- Shopify Polaris components for consistent UX
+- Automatic save functionality
 
 ## Development Guidelines
 
-- Use Shopify CLI for app scaffolding
+- Use Shopify CLI for app scaffolding and development (`npm run dev`)
 - Follow Shopify app development best practices
+- Remix framework for full-stack React application (NO Express.js)
+- Prisma ORM for database operations (PostgreSQL production, SQLite development)
+- Shopify Polaris for admin interface consistency
+- CORS-enabled API for theme extension integration
 - Focus on simple MVP first, then iterate with advanced features
 - Ensure mobile responsiveness for popups
+- **Technology Compatibility**: All enhancements must be Remix-compatible
+- **No Express Dependencies**: Use Remix built-in server and custom middleware
+- **Version Locking**: Maintain compatibility with React 18.2.0, Remix 2.16.1, Polaris 12.0.0
+- **Security First**: Implement custom rate limiting, input sanitization, and error tracking
+- **Performance Focus**: Use Node.js native APIs and Prisma optimizations
+
+## Tech Stack
+
+- **Framework**: Remix (React-based full-stack) - PRIMARY ARCHITECTURE
+- **Backend**: Node.js with Shopify App APIs (NO Express.js)
+- **Database**: Prisma ORM with PostgreSQL (production) / SQLite (development)
+- **UI Library**: Shopify Polaris (version locked at 12.0.0)
+- **Frontend**: React 18.2.0 with Shopify App Bridge
+- **Theme Integration**: Liquid + Vanilla JavaScript
+- **Testing**: Node.js Test Runner + Playwright
+- **Security**: Custom rate limiting + DOMPurify + Sentry
+- **Monitoring**: Winston logging + Sentry error tracking
+- **Deployment**: Docker containerization
+- **Build**: Vite (Remix compatible, NO Webpack)
