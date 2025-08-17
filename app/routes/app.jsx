@@ -25,6 +25,7 @@ export default function App() {
         <Link to="/app/dashboard">Dashboard</Link>
         <Link to="/app/templates">Templates</Link>
         <Link to="/app/ai-templates">AI Templates</Link>
+        <Link to="/app/scheduling">Scheduling</Link>
         <Link to="/app/localization">Localization</Link>
         <Link to="/app/marketplace">Marketplace</Link>
         <Link to="/app/analytics">Analytics</Link>

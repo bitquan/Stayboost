@@ -52,7 +52,6 @@ model PopupSettings {
 
   // Relations to new features
   abTests           ABTest[]
-  schedules         PopupSchedule[]
   frequencyTracking PopupFrequencyTracking[]
   translations      PopupTranslation[]
 }
@@ -118,28 +117,51 @@ model ABTestStatistic {
   @@unique([abTestId, variantId, date])
 }
 
-// Scheduling Tables
-model PopupSchedule {
+// Template Scheduling for campaigns and events
+model TemplateSchedule {
   id                 Int       @id @default(autoincrement())
   shop               String
-  popupSettingsId    Int?
+  templateId         Int
   name               String
   description        String?
-  scheduleType       String // one_time, daily, weekly, monthly, yearly, custom
+  campaignType       String // seasonal, sale, event, promotion, test
+  scheduleType       String // one_time, recurring, campaign, event
   startDate          DateTime
   endDate            DateTime?
   timezone           String    @default("UTC")
-  recurrenceRule     String? // JSON string
   isActive           Boolean   @default(true)
   priority           Int       @default(0)
-  conflictResolution String    @default("first_wins")
+  autoActivate       Boolean   @default(true)
+  conflictResolution String    @default("higher_priority") // higher_priority, latest, first
+  metadata           String? // JSON string for campaign details
   createdAt          DateTime  @default(now())
   updatedAt          DateTime  @updatedAt
 
-  popupSettings PopupSettings?       @relation(fields: [popupSettingsId], references: [id])
-  activations   ScheduleActivation[]
+  template    PopupTemplate        @relation(fields: [templateId], references: [id], onDelete: Cascade)
+  activations ScheduleActivation[]
 
   @@unique([shop, name])
+  @@index([shop, startDate, endDate])
+  @@index([campaignType, scheduleType])
+}
+
+model CampaignTemplate {
+  id                Int      @id @default(autoincrement())
+  shop              String
+  name              String
+  campaignType      String // black_friday, christmas, valentines, mothers_day, back_to_school, etc
+  templateConfig    String // JSON string of template configuration
+  defaultSchedule   String? // JSON string of default scheduling settings
+  targetAudience    String? // JSON string of audience targeting
+  performanceGoals  String? // JSON string of KPIs and goals
+  isActive          Boolean  @default(true)
+  usageCount        Int      @default(0)
+  avgConversionRate Float    @default(0.0)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([shop, name])
+  @@index([campaignType])
 }
 
 model ScheduleActivation {
@@ -152,7 +174,7 @@ model ScheduleActivation {
   errorMessage     String?
   createdAt        DateTime  @default(now())
 
-  schedule PopupSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+  schedule TemplateSchedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
 }
 
 // Frequency Control Tables
@@ -344,6 +366,7 @@ model PopupTemplate {
   ratings      TemplateRating[]
   favorites    TemplateFavorites[]
   translations TemplateTranslation[]
+  schedules    TemplateSchedule[]
 
   @@index([shop])
   @@index([category])
