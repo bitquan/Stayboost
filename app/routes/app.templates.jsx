@@ -4,6 +4,7 @@ import { Badge, BlockStack, Box, Button, Card, InlineGrid, InlineStack, Layout, 
 import { useCallback, useEffect, useState } from "react";
 import { AdvancedTemplatePreview } from "../components/AdvancedTemplatePreview";
 import { CustomTemplateModal } from "../components/CustomTemplateModal";
+import { TemplateFavoriteButton } from "../components/TemplateFavoriteButton";
 import { TemplateImportExportModal } from "../components/TemplateImportExportModal";
 import { TemplatePreview } from "../components/TemplatePreview";
 import prisma from "../db.server";
@@ -47,6 +48,7 @@ export async function loader({ request }) {
 
 const TEMPLATE_CATEGORIES = {
   all: "All Templates",
+  favorites: "⭐ My Favorites",
   exit_intent: "Exit Intent",
   sale: "Sale & Promotions", 
   holiday: "Holiday & Seasonal",
@@ -74,6 +76,11 @@ export default function Templates() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedTemplate, setSelectedTemplate] = useState(null);
   const [isApplying, setIsApplying] = useState(false);
+  
+  // Favorites state
+  const [favorites, setFavorites] = useState([]);
+  const [favoritedTemplateIds, setFavoritedTemplateIds] = useState(new Set());
+  const [loadingFavorites, setLoadingFavorites] = useState(true);
   
   // Custom template modal state
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -137,9 +144,49 @@ export default function Templates() {
     setTemplates(transformedTemplates);
   }, [loaderTemplates]);
 
-  const filteredTemplates = templates.filter(template =>
-    selectedCategory === "all" || template.category === selectedCategory
-  );
+  // Load favorites when component mounts
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        const response = await fetch('/api/template-favorites');
+        const result = await response.json();
+        
+        if (result.success) {
+          setFavorites(result.favorites);
+          setFavoritedTemplateIds(new Set(result.favoritedTemplateIds));
+        }
+      } catch (error) {
+        console.error('Error loading favorites:', error);
+      } finally {
+        setLoadingFavorites(false);
+      }
+    };
+
+    loadFavorites();
+  }, []);
+
+  // Handle favorite toggle
+  const handleFavoriteToggle = useCallback((templateId, isFavorited) => {
+    if (isFavorited) {
+      setFavoritedTemplateIds(prev => new Set([...prev, templateId]));
+    } else {
+      setFavoritedTemplateIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(templateId);
+        return newSet;
+      });
+    }
+  }, []);
+
+  const filteredTemplates = templates.filter(template => {
+    if (selectedCategory === "all") {
+      return true;
+    } else if (selectedCategory === "favorites") {
+      return favoritedTemplateIds.has(template.id);
+    } else {
+      return template.category === selectedCategory;
+    }
+  });
 
   const applyTemplate = useCallback(async (template) => {
     setIsApplying(true);
@@ -345,8 +392,13 @@ export default function Templates() {
                   <BlockStack gap="300">
                     <InlineStack align="space-between">
                       <BlockStack gap="200">
-                        <InlineStack gap="200">
+                        <InlineStack gap="200" align="start">
                           <Text variant="headingMd">{template.name}</Text>
+                          <TemplateFavoriteButton
+                            templateId={template.id}
+                            isFavorited={favoritedTemplateIds.has(template.id)}
+                            onFavoriteToggle={handleFavoriteToggle}
+                          />
                           <Badge tone={template.templateType === 'custom' ? 'info' : 'success'}>
                             {template.templateType === 'custom' ? 'Custom' : 'Built-in'}
                           </Badge>

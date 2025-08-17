@@ -372,3 +372,5 @@
 {"timestamp":"2025-08-17 17:54:36.138","level":"info","message":"Environment validation completed","category":"system","valid":true,"errors":0,"warnings":0,"missing":0,"generated":0,"validationTime":0}
 {"timestamp":"2025-08-17 17:54:39.897","level":"warn","message":"Database: findUnique on popupSettings (1755467679896ms)","category":"database","shop":"tinyplugs.myshopify.com","operation":"findUnique","table":"popupSettings","duration":1755467679896,"type":"database_query"}
 {"timestamp":"2025-08-17 17:54:39.913","level":"info","message":"Popup settings not found, returning defaults","category":"database","shop":"tinyplugs.myshopify.com"}
+{"timestamp":"2025-08-17 18:07:31.760","level":"warn","message":"Database: findUnique on popupSettings (1755468451735ms)","category":"database","shop":"tinyplugs.myshopify.com","operation":"findUnique","table":"popupSettings","duration":1755468451735,"type":"database_query"}
+{"timestamp":"2025-08-17 18:07:31.781","level":"info","message":"Popup settings not found, returning defaults","category":"database","shop":"tinyplugs.myshopify.com"}

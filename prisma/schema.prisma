@@ -342,6 +342,7 @@ model PopupTemplate {
 
   usageStats TemplateUsageStats[]
   ratings    TemplateRating[]
+  favorites  TemplateFavorites[]
 
   @@index([shop])
   @@index([category])
@@ -423,5 +424,21 @@ model IntegrationSyncLog {
 
   @@index([integrationId])
   @@index([status])
+  @@index([createdAt])
+}
+
+// Template Favorites Model - Track user favorite templates
+model TemplateFavorites {
+  id         Int      @id @default(autoincrement())
+  shop       String // The shop domain that favorited the template
+  templateId Int // Reference to the PopupTemplate
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  template PopupTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([shop, templateId]) // Prevent duplicate favorites for same shop/template
+  @@index([shop])
+  @@index([templateId])
   @@index([createdAt])
 }
