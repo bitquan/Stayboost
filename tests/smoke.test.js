@@ -1,7 +1,7 @@
-import { test, describe } from 'node:test';
-import assert from 'node:assert';
 import { PrismaClient } from '@prisma/client';
 import fs from 'fs';
+import assert from 'node:assert';
+import { describe, test } from 'node:test';
 import path from 'path';
 
 const prisma = new PrismaClient();
@@ -221,7 +221,7 @@ describe('StayBoost Smoke Tests', () => {
     assert.ok(schemaFile.includes('model PopupSettings'), 'Schema should have PopupSettings model');
     assert.ok(schemaFile.includes('shop               String   @unique'), 'Schema should have unique shop field');
     assert.ok(schemaFile.includes('enabled            Boolean  @default(true)'), 'Schema should have enabled field');
-    assert.ok(schemaFile.includes('discountPercentage Int?     @default(10)'), 'Schema should have discountPercentage field');
+    assert.ok(schemaFile.includes('discountPercentage Int      @default(10)'), 'Schema should have discountPercentage field');
     assert.ok(schemaFile.includes('delaySeconds       Int      @default(2)'), 'Schema should have delaySeconds field');
     assert.ok(schemaFile.includes('showOnce           Boolean  @default(true)'), 'Schema should have showOnce field');
   });

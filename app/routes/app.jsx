@@ -20,19 +20,17 @@ export default function App() {
     <AppProvider isEmbeddedApp apiKey={apiKey}>
       <NavMenu>
         <Link to="/app" rel="home">
-          Home
+          Dashboard
         </Link>
-        <Link to="/app/dashboard">Dashboard</Link>
         <Link to="/app/templates">Templates</Link>
+        <Link to="/app/analytics">Analytics</Link>
+        <Link to="/app/ab-testing">A/B Testing</Link>
         <Link to="/app/ai-templates">AI Templates</Link>
         <Link to="/app/scheduling">Scheduling</Link>
         <Link to="/app/localization">Localization</Link>
         <Link to="/app/marketplace">Marketplace</Link>
-        <Link to="/app/analytics">Analytics</Link>
-        <Link to="/app/ab-testing">A/B Testing</Link>
-        <Link to="/app/smart-targeting">Smart Targeting</Link>
-        <Link to="/app/integrations">Integrations</Link>
-        <Link to="/app/additional">Additional page</Link>
+        <Link to="/app/api-v2">API v2 Demo</Link>
+        <Link to="/app/help">📚 Help Center</Link>
       </NavMenu>
       <Outlet />
     </AppProvider>

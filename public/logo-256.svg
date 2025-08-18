@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <!-- StayBoost App Logo - Clean and Professional -->
+  <defs>
+    <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#4F46E5;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#7C3AED;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="windowGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F8FAFC;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#E2E8F0;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main background circle -->
+  <circle cx="128" cy="128" r="120" fill="url(#brandGradient)" stroke="#1E293B" stroke-width="4"/>
+  
+  <!-- Browser window -->
+  <rect x="48" y="64" width="160" height="120" rx="12" fill="#1E293B" stroke="#334155" stroke-width="2"/>
+  
+  <!-- Browser header bar -->
+  <rect x="48" y="64" width="160" height="24" rx="12" fill="#475569"/>
+  <rect x="48" y="80" width="160" height="104" rx="0" fill="url(#windowGradient)"/>
+  
+  <!-- Browser controls (traffic lights) -->
+  <circle cx="62" cy="76" r="4" fill="#EF4444"/>
+  <circle cx="78" cy="76" r="4" fill="#F59E0B"/>
+  <circle cx="94" cy="76" r="4" fill="#10B981"/>
+  
+  <!-- Exit cursor/arrow -->
+  <path d="M 110 100 L 95 85 L 102 85 L 102 70 L 118 70 L 118 85 L 125 85 Z" fill="#4F46E5" stroke="#FFFFFF" stroke-width="2"/>
+  
+  <!-- Popup modal -->
+  <rect x="80" y="120" width="96" height="60" rx="8" fill="#FFFFFF" stroke="#4F46E5" stroke-width="3"/>
+  
+  <!-- Popup content -->
+  <rect x="90" y="132" width="60" height="4" rx="2" fill="#1E293B"/>
+  <rect x="90" y="140" width="76" height="3" rx="1.5" fill="#64748B"/>
+  <rect x="90" y="147" width="70" height="3" rx="1.5" fill="#64748B"/>
+  
+  <!-- CTA button -->
+  <rect x="90" y="157" width="30" height="12" rx="6" fill="#4F46E5"/>
+  <rect x="125" y="157" width="30" height="12" rx="6" fill="#E2E8F0" stroke="#CBD5E1" stroke-width="1"/>
+  
+  <!-- Discount badge -->
+  <circle cx="190" cy="110" r="20" fill="#059669" stroke="#FFFFFF" stroke-width="3"/>
+  <text x="190" y="108" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF" text-anchor="middle">10</text>
+  <text x="190" y="118" font-family="Arial, sans-serif" font-size="8" font-weight="bold" fill="#FFFFFF" text-anchor="middle">%</text>
+  
+  <!-- Boost arrow/rocket element -->
+  <path d="M 35 180 L 45 160 L 50 165 L 60 155 L 65 165 L 55 175 Z" fill="#FBBF24" stroke="#F59E0B" stroke-width="2"/>
+</svg>

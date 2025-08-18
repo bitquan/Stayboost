@@ -1,0 +1,14 @@
+
+   ╭─────────────╮
+   │ ╭─────────╮ │  ← Browser Window
+   │ │  ↗️ EXIT │ │  
+   │ ╰─────────╯ │
+   │             │
+   │  ┌─────────┐│  ← Exit-Intent Popup
+   │  │ 10% OFF ││
+   │  │ [CLAIM] ││
+   │  └─────────┘│
+   ╰─────────────╯
+   
+   StayBoost - Exit-Intent Popups
+  

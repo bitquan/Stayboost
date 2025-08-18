@@ -15,7 +15,6 @@ import {
     Pagination,
     Select,
     Text,
-    TextContainer,
     TextField,
     Thumbnail
 } from "@shopify/polaris";
@@ -413,11 +412,9 @@ export default function TemplateMarketplace() {
           ) : (
             <Card>
               <Box padding="400">
-                <TextContainer>
-                  <Text variant="bodyMd" alignment="center">
-                    No templates found. Try adjusting your search criteria.
-                  </Text>
-                </TextContainer>
+                <Text variant="bodyMd" alignment="center">
+                  No templates found. Try adjusting your search criteria.
+                </Text>
               </Box>
             </Card>
           )}

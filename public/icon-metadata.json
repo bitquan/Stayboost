@@ -1,0 +1,26 @@
+{
+  "name": "StayBoost",
+  "description": "Exit-Intent Popup App Icon",
+  "version": "1.0.0",
+  "sizes": [
+    16,
+    32,
+    64,
+    128,
+    256,
+    512
+  ],
+  "formats": [
+    "svg",
+    "png",
+    "ico"
+  ],
+  "colors": {
+    "primary": "#4F46E5",
+    "secondary": "#7C3AED",
+    "accent": "#059669",
+    "background": "#FFFFFF",
+    "text": "#1E293B"
+  },
+  "concept": "Browser window with exit cursor and popup modal showing discount offer"
+}

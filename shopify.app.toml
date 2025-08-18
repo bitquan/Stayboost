@@ -3,7 +3,7 @@
 client_id = "8279a1a1278f468713b7aaf5fad1f7dc"
 name = "StayBoost"
 handle = "stayboost"
-application_url = "https://spider-batman-corn-anything.trycloudflare.com"
+application_url = "https://butter-lebanon-attachments-tube.trycloudflare.com"
 embedded = true
 
 [build]
@@ -26,7 +26,7 @@ api_version = "2025-07"
 scopes = "write_products"
 
 [auth]
-redirect_urls = ["https://spider-batman-corn-anything.trycloudflare.com/auth/callback", "https://spider-batman-corn-anything.trycloudflare.com/auth/shopify/callback", "https://spider-batman-corn-anything.trycloudflare.com/api/auth/callback"]
+redirect_urls = ["https://butter-lebanon-attachments-tube.trycloudflare.com/auth/callback", "https://butter-lebanon-attachments-tube.trycloudflare.com/auth/shopify/callback", "https://butter-lebanon-attachments-tube.trycloudflare.com/api/auth/callback"]
 
 [pos]
 embedded = false
